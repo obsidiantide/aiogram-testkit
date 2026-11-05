@@ -17,3 +17,7 @@ dev = [
     "pytest",
     "pytest-asyncio",
 ]
+
+[tool.pytest.ini_options]
+asyncio_default_fixture_loop_scope = "function"
+testpaths = ["tests"]
