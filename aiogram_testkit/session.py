@@ -1,5 +1,6 @@
 from typing import Any, AsyncGenerator, Dict, List, Optional, Type, TypeVar
 
+
 from aiogram.client.bot import Bot
 from aiogram.client.session.base import BaseSession
 from aiogram.methods import TelegramMethod
@@ -22,6 +23,14 @@ class MockedSession(BaseSession):
     def add_result(self, method_name: str, result: Any) -> None:
         """
         Mock the result for a specific API method (e.g. 'SendMessage').
+
+        ``result`` may be:
+
+        * a plain value, returned as is on every call;
+        * an exception instance, raised on every call (useful for simulating
+          Telegram API errors such as ``TelegramForbiddenError``);
+        * a callable, invoked with the recorded method; its return value is
+          used as the result, which allows building responses from the request.
         """
         self.responses[method_name] = result
 
@@ -84,7 +93,12 @@ class MockedSession(BaseSession):
         method_name = type(method).__name__
 
         if method_name in self.responses:
-            return self.responses[method_name]
+            result = self.responses[method_name]
+            if isinstance(result, BaseException):
+                raise result
+            if callable(result):
+                return result(method)
+            return result
 
         return None
 

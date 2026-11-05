@@ -98,3 +98,36 @@ async def test_mocked_session_stream_content_and_close():
         chunks.append(chunk)
 
     assert chunks == [b""]
+
+
+@pytest.mark.asyncio
+async def test_mocked_session_raises_mocked_exception():
+    session = MockedSession()
+    bot = Bot(token="1234:test", session=session)
+    session.add_result("SendMessage", RuntimeError("blocked by user"))
+
+    with pytest.raises(RuntimeError, match="blocked by user"):
+        await bot.send_message(chat_id=1, text="hi")
+
+    # The failed request is still recorded for inspection.
+    assert session.count_requests(SendMessage) == 1
+
+
+@pytest.mark.asyncio
+async def test_mocked_session_callable_result_receives_request():
+    session = MockedSession()
+    bot = Bot(token="1234:test", session=session)
+    session.add_result(
+        "SendMessage",
+        lambda method: Message(
+            message_id=7,
+            date=1234567890,
+            chat=Chat(id=method.chat_id, type="private"),
+            text=method.text.upper(),
+        ),
+    )
+
+    result = await bot.send_message(chat_id=55, text="echo")
+
+    assert result.chat.id == 55
+    assert result.text == "ECHO"
