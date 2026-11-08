@@ -8,6 +8,7 @@ from aiogram_testkit import (
     MockedSession,
     create_callback_query,
     create_chat,
+    create_inline_query,
     create_message,
     create_update,
     create_user,
@@ -159,3 +160,30 @@ def test_mocked_session_count_requests():
     session = MockedSession()
     assert session.count_requests() == 0
     assert session.count_requests(SendMessage) == 0
+
+
+def test_create_inline_query_defaults():
+    iq = create_inline_query()
+    assert iq.query == ""
+    assert iq.offset == ""
+    assert iq.from_user.id == 123456
+
+
+def test_create_inline_query_custom_values():
+    iq = create_inline_query(query="cats", offset="10", user_id=42, id="q7")
+    assert (iq.id, iq.query, iq.offset, iq.from_user.id) == ("q7", "cats", "10", 42)
+
+
+@pytest.mark.asyncio
+async def test_create_inline_query_bound_to_bot_can_answer():
+    session = MockedSession()
+    bot = Bot(token="1234:test", session=session)
+    iq = create_inline_query(query="x", bot=bot)
+    await iq.answer(results=[])
+    assert session.count_requests() == 1
+
+
+def test_create_update_with_inline_query():
+    upd = create_update(inline_query=create_inline_query(query="hi"))
+    assert upd.inline_query.query == "hi"
+    assert upd.message is None

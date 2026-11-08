@@ -2,7 +2,7 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 from aiogram.client.bot import Bot
-from aiogram.types import CallbackQuery, Chat, Message, Update, User
+from aiogram.types import CallbackQuery, Chat, InlineQuery, Message, Update, User
 
 
 def create_user(
@@ -122,10 +122,40 @@ def create_callback_query(
     return cb
 
 
+def create_inline_query(
+    query: str = "",
+    from_user: Optional[User] = None,
+    id: str = "inline_query_1",
+    offset: str = "",
+    bot: Optional[Bot] = None,
+    user_id: Optional[int] = None,
+    **kwargs: Any,
+) -> InlineQuery:
+    """
+    Creates a mock InlineQuery with sensible defaults.
+    If bot is provided, binds the query to the bot.
+    """
+    if from_user is None:
+        effective_user_id = user_id if user_id is not None else 123456
+        from_user = create_user(id=effective_user_id)
+
+    iq = InlineQuery(
+        id=id,
+        from_user=from_user,
+        query=query,
+        offset=offset,
+        **kwargs,
+    )
+    if bot is not None:
+        iq = iq.as_(bot)
+    return iq
+
+
 def create_update(
     update_id: int = 10001,
     message: Optional[Message] = None,
     callback_query: Optional[CallbackQuery] = None,
+    inline_query: Optional[InlineQuery] = None,
     bot: Optional[Bot] = None,
     **kwargs: Any,
 ) -> Update:
@@ -137,6 +167,7 @@ def create_update(
         update_id=update_id,
         message=message,
         callback_query=callback_query,
+        inline_query=inline_query,
         **kwargs,
     )
     if bot is not None:
