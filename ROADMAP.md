@@ -2,7 +2,7 @@
 
 ## A. Core Features
 - [x] Raise exceptions / build responses dynamically via `add_result`
-- [ ] Per-call result queues (different result for the first and second call)
+- [x] Per-call result queues (different result for the first and second call)
 - [ ] `create_inline_query` and `create_chat_member_updated` factories
 - [ ] `Dispatcher` helper to feed an update and return recorded requests
 

@@ -6,6 +6,7 @@ A lightweight toolkit for testing [aiogram](https://github.com/aiogram/aiogram) 
 
 - **MockedSession**: In-memory `BaseSession` implementation that records all outgoing bot requests and returns predefined responses.
 - **Dynamic Responses**: `add_result` accepts a value, an exception to raise (e.g. simulate `TelegramForbiddenError`), or a callable that builds the response from the request.
+- **Per-call Results**: `add_results("SendMessage", first, second, ...)` returns (or raises) a different result on each successive call; the last one repeats.
 - **Request Inspection**: Query recorded requests with helpers like `get_request`, `find_requests`, `has_request`, `count_requests`, and `last_request`.
 - **Event Factories**: Helpers (`create_message`, `create_user`, `create_chat`, `create_callback_query`, `create_update`) with sensible defaults for quick testing.
 - **Zero External Mocks**: Clean, type-safe API that does not require monkeypatching `aiohttp`.

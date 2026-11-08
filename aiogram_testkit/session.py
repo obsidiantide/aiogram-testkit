@@ -1,4 +1,5 @@
-from typing import Any, AsyncGenerator, Dict, List, Optional, Type, TypeVar
+from collections import deque
+from typing import Any, AsyncGenerator, Deque, Dict, List, Optional, Type, TypeVar
 
 
 from aiogram.client.bot import Bot
@@ -19,6 +20,7 @@ class MockedSession(BaseSession):
         super().__init__()
         self.requests: List[TelegramMethod[Any]] = []
         self.responses: Dict[str, Any] = {}
+        self._queues: Dict[str, Deque[Any]] = {}
 
     def add_result(self, method_name: str, result: Any) -> None:
         """
@@ -32,7 +34,22 @@ class MockedSession(BaseSession):
         * a callable, invoked with the recorded method; its return value is
           used as the result, which allows building responses from the request.
         """
+        self._queues.pop(method_name, None)
         self.responses[method_name] = result
+
+    def add_results(self, method_name: str, *results: Any) -> None:
+        """
+        Queue several results for a method: the first call gets the first
+        result, the second call the second one, and so on. Once only one result
+        is left it is returned on every further call.
+
+        Each item follows the same rules as in :meth:`add_result` (plain value,
+        exception instance or callable).
+        """
+        if not results:
+            raise ValueError("add_results() requires at least one result")
+        self.responses.pop(method_name, None)
+        self._queues[method_name] = deque(results)
 
     def get_request(self, method_type: Type[T]) -> Optional[T]:
         """
@@ -76,6 +93,7 @@ class MockedSession(BaseSession):
         """
         self.requests.clear()
         self.responses.clear()
+        self._queues.clear()
 
     async def close(self) -> None:
         pass
@@ -92,15 +110,19 @@ class MockedSession(BaseSession):
         self.requests.append(method)
         method_name = type(method).__name__
 
-        if method_name in self.responses:
+        if method_name in self._queues:
+            queue = self._queues[method_name]
+            result = queue[0] if len(queue) == 1 else queue.popleft()
+        elif method_name in self.responses:
             result = self.responses[method_name]
-            if isinstance(result, BaseException):
-                raise result
-            if callable(result):
-                return result(method)
-            return result
+        else:
+            return None
 
-        return None
+        if isinstance(result, BaseException):
+            raise result
+        if callable(result):
+            return result(method)
+        return result
 
     async def stream_content(
         self,

@@ -131,3 +131,51 @@ async def test_mocked_session_callable_result_receives_request():
 
     assert result.chat.id == 55
     assert result.text == "ECHO"
+
+
+@pytest.mark.asyncio
+async def test_add_results_returns_results_in_call_order():
+    session = MockedSession()
+    bot = Bot(token="1234:test", session=session)
+    first = Message(message_id=1, date=1234567890, chat=Chat(id=1, type="private"), text="a")
+    second = Message(message_id=2, date=1234567890, chat=Chat(id=1, type="private"), text="b")
+    session.add_results("SendMessage", first, second)
+
+    r1 = await bot.send_message(chat_id=1, text="x")
+    r2 = await bot.send_message(chat_id=1, text="x")
+    r3 = await bot.send_message(chat_id=1, text="x")
+
+    assert (r1.message_id, r2.message_id, r3.message_id) == (1, 2, 2)
+
+
+@pytest.mark.asyncio
+async def test_add_results_can_mix_exceptions_and_values():
+    session = MockedSession()
+    bot = Bot(token="1234:test", session=session)
+    ok = Message(message_id=7, date=1234567890, chat=Chat(id=1, type="private"), text="ok")
+    session.add_results("SendMessage", RuntimeError("boom"), ok)
+
+    with pytest.raises(RuntimeError, match="boom"):
+        await bot.send_message(chat_id=1, text="x")
+    result = await bot.send_message(chat_id=1, text="x")
+
+    assert result.message_id == 7
+
+
+def test_add_results_requires_at_least_one_result():
+    with pytest.raises(ValueError):
+        MockedSession().add_results("SendMessage")
+
+
+@pytest.mark.asyncio
+async def test_add_result_replaces_queue_and_reset_clears_it():
+    session = MockedSession()
+    bot = Bot(token="1234:test", session=session)
+    session.add_results("DeleteMessage", False, True)
+    session.add_result("DeleteMessage", True)
+
+    assert await bot.delete_message(chat_id=1, message_id=1) is True
+
+    session.add_results("DeleteMessage", False)
+    session.reset()
+    assert await bot.delete_message(chat_id=1, message_id=1) is None
