@@ -14,7 +14,7 @@
 
 ## C. Architecture & Refactoring
 - [ ] Split request inspection helpers into a mixin
-- [ ] Typed `py.typed` marker and mypy configuration
+- [x] Typed `py.typed` marker and mypy configuration
 
 ## D. Performance & Polish
 - [ ] Usage guide with FSM and middleware examples in README

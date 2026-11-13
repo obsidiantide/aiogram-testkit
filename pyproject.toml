@@ -16,8 +16,13 @@ dependencies = [
 dev = [
     "pytest",
     "pytest-asyncio",
+    "mypy",
 ]
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
 testpaths = ["tests"]
+
+[tool.mypy]
+files = ["aiogram_testkit"]
+warn_unused_ignores = true

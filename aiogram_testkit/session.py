@@ -116,7 +116,7 @@ class MockedSession(BaseSession):
         elif method_name in self.responses:
             result = self.responses[method_name]
         else:
-            return None
+            return None  # type: ignore[return-value]  # unmocked calls yield None
 
         if isinstance(result, BaseException):
             raise result
