@@ -2,7 +2,15 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 from aiogram.client.bot import Bot
-from aiogram.types import CallbackQuery, Chat, InlineQuery, Message, Update, User
+from aiogram.types import (
+    CallbackQuery,
+    Chat,
+    ChatMemberUpdated,
+    InlineQuery,
+    Message,
+    Update,
+    User,
+)
 
 
 def create_user(
@@ -151,11 +159,65 @@ def create_inline_query(
     return iq
 
 
+def _chat_member(user: User, status: str) -> dict:
+    data: dict = {"status": status, "user": user}
+    if status == "kicked":
+        # ChatMemberBanned requires until_date; epoch 0 means "forever".
+        data["until_date"] = datetime.fromtimestamp(0, tz=timezone.utc)
+    return data
+
+
+def create_chat_member_updated(
+    old_status: str = "left",
+    new_status: str = "member",
+    chat: Optional[Chat] = None,
+    from_user: Optional[User] = None,
+    member: Optional[User] = None,
+    date: Optional[datetime] = None,
+    bot: Optional[Bot] = None,
+    chat_id: Optional[int] = None,
+    user_id: Optional[int] = None,
+    **kwargs: Any,
+) -> ChatMemberUpdated:
+    """
+    Creates a mock ChatMemberUpdated describing a status change of `member`
+    from `old_status` to `new_status` (e.g. "left" -> "member").
+    Statuses "member", "left" and "kicked" are built automatically; for richer
+    statuses (administrator, restricted) pass ready `old_chat_member` /
+    `new_chat_member` objects via kwargs.
+    If bot is provided, binds the object to the bot.
+    """
+    if chat is None:
+        chat = create_chat(id=chat_id if chat_id is not None else 123456)
+    if from_user is None:
+        from_user = create_user(id=user_id if user_id is not None else 123456)
+    if member is None:
+        member = from_user
+    if date is None:
+        date = datetime.now(timezone.utc)
+
+    cmu = ChatMemberUpdated(
+        chat=chat,
+        from_user=from_user,
+        date=date,
+        **{
+            "old_chat_member": _chat_member(member, old_status),
+            "new_chat_member": _chat_member(member, new_status),
+            **kwargs,
+        },
+    )
+    if bot is not None:
+        cmu = cmu.as_(bot)
+    return cmu
+
+
 def create_update(
     update_id: int = 10001,
     message: Optional[Message] = None,
     callback_query: Optional[CallbackQuery] = None,
     inline_query: Optional[InlineQuery] = None,
+    chat_member: Optional[ChatMemberUpdated] = None,
+    my_chat_member: Optional[ChatMemberUpdated] = None,
     bot: Optional[Bot] = None,
     **kwargs: Any,
 ) -> Update:
@@ -168,6 +230,8 @@ def create_update(
         message=message,
         callback_query=callback_query,
         inline_query=inline_query,
+        chat_member=chat_member,
+        my_chat_member=my_chat_member,
         **kwargs,
     )
     if bot is not None:

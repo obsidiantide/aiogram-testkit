@@ -3,11 +3,19 @@ from datetime import datetime, timezone
 import pytest
 from aiogram import Bot
 from aiogram.methods import AnswerCallbackQuery, EditMessageText, SendMessage
-from aiogram.types import CallbackQuery, Chat, Message, Update, User
+from aiogram.types import (
+    CallbackQuery,
+    Chat,
+    ChatMemberOwner,
+    Message,
+    Update,
+    User,
+)
 from aiogram_testkit import (
     MockedSession,
     create_callback_query,
     create_chat,
+    create_chat_member_updated,
     create_inline_query,
     create_message,
     create_update,
@@ -187,3 +195,51 @@ def test_create_update_with_inline_query():
     upd = create_update(inline_query=create_inline_query(query="hi"))
     assert upd.inline_query.query == "hi"
     assert upd.message is None
+
+
+def test_create_chat_member_updated_defaults():
+    cmu = create_chat_member_updated()
+    assert cmu.old_chat_member.status == "left"
+    assert cmu.new_chat_member.status == "member"
+    assert cmu.new_chat_member.user.id == cmu.from_user.id
+    assert cmu.chat.id == 123456
+
+
+def test_create_chat_member_updated_custom_member_and_chat():
+    member = create_user(id=7, username="newbie")
+    cmu = create_chat_member_updated(
+        old_status="member",
+        new_status="kicked",
+        member=member,
+        chat_id=-100500,
+        user_id=1,
+    )
+    assert cmu.new_chat_member.status == "kicked"
+    assert cmu.new_chat_member.user.username == "newbie"
+    assert cmu.from_user.id == 1
+    assert cmu.chat.id == -100500
+
+
+@pytest.mark.asyncio
+async def test_create_chat_member_updated_bound_to_bot():
+    bot = Bot(token="1234:test", session=MockedSession())
+    cmu = create_chat_member_updated(bot=bot)
+    assert cmu.bot is bot
+
+
+def test_create_update_with_chat_member_and_my_chat_member():
+    upd = create_update(chat_member=create_chat_member_updated())
+    assert upd.chat_member.new_chat_member.status == "member"
+    assert upd.my_chat_member is None
+    upd = create_update(my_chat_member=create_chat_member_updated(new_status="kicked"))
+    assert upd.my_chat_member.new_chat_member.status == "kicked"
+
+
+def test_create_chat_member_updated_accepts_explicit_chat_members():
+    user = create_user(id=9)
+    admin = ChatMemberOwner(
+        status="creator", user=user, is_anonymous=False
+    )
+    cmu = create_chat_member_updated(new_chat_member=admin)
+    assert cmu.new_chat_member.status == "creator"
+    assert cmu.old_chat_member.status == "left"
