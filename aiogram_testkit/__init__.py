@@ -11,6 +11,7 @@ from .factories import (
     create_update,
     create_user,
 )
+from .dispatcher import feed_update
 from .session import MockedSession
 
 __all__ = [
@@ -22,4 +23,5 @@ __all__ = [
     "create_message",
     "create_update",
     "create_user",
+    "feed_update",
 ]
