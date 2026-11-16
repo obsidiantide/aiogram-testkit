@@ -5,7 +5,7 @@
 - [x] Per-call result queues (different result for the first and second call)
 - [x] `create_inline_query` factory
 - [x] `create_chat_member_updated` factory
-- [ ] `Dispatcher` helper to feed an update and return recorded requests
+- [x] `feed_update` helper to feed an update and return recorded requests
 
 ## B. Test Coverage
 - [x] MockedSession and factory unit tests
