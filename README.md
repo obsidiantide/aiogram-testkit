@@ -70,3 +70,22 @@ async def test_start():
 ```
 
 Extra keyword arguments are passed to `Dispatcher.feed_update` as workflow data.
+
+## pytest fixtures
+
+Installing the package registers a pytest plugin with two fixtures:
+
+- `mocked_session` — a fresh `MockedSession` for each test;
+- `mocked_bot` — an `aiogram.Bot` bound to that session (closed after the test).
+
+```python
+import pytest
+from aiogram_testkit import create_message, create_update, feed_update
+
+
+@pytest.mark.asyncio
+async def test_start(mocked_bot, mocked_session):
+    mocked_session.add_result("SendMessage", ...)
+    requests = await feed_update(dp, mocked_bot, create_update(message=create_message(text="/start", bot=mocked_bot)))
+    assert requests[0].text == "Welcome!"
+```

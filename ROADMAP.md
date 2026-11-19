@@ -18,4 +18,4 @@
 
 ## D. Performance & Polish
 - [ ] Usage guide with FSM and middleware examples in README
-- [ ] pytest plugin exposing `bot` and `session` fixtures
+- [x] pytest plugin exposing `mocked_bot` and `mocked_session` fixtures
