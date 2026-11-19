@@ -10,7 +10,7 @@
 ## B. Test Coverage
 - [x] MockedSession and factory unit tests
 - [ ] Tests for factories with `bot` binding for every event type
-- [ ] Python 3.9 / 3.12 CI matrix
+- [x] Python 3.9 / 3.12 CI matrix
 
 ## C. Architecture & Refactoring
 - [ ] Split request inspection helpers into a mixin
