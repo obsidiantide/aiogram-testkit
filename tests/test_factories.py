@@ -243,3 +243,42 @@ def test_create_chat_member_updated_accepts_explicit_chat_members():
     cmu = create_chat_member_updated(new_chat_member=admin)
     assert cmu.new_chat_member.status == "creator"
     assert cmu.old_chat_member.status == "left"
+
+
+@pytest.mark.asyncio
+async def test_create_update_bound_to_bot():
+    bot = Bot(token="1234:test", session=MockedSession())
+    upd = create_update(message=create_message(text="hi"), bot=bot)
+    assert upd.bot is bot
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "factory",
+    [
+        lambda bot: create_message(text="x", bot=bot),
+        lambda bot: create_callback_query(data="x", bot=bot),
+        lambda bot: create_inline_query(query="x", bot=bot),
+        lambda bot: create_chat_member_updated(bot=bot),
+        lambda bot: create_update(bot=bot),
+    ],
+    ids=["message", "callback_query", "inline_query", "chat_member_updated", "update"],
+)
+async def test_every_factory_binds_the_given_bot(factory):
+    bot = Bot(token="1234:test", session=MockedSession())
+    assert factory(bot).bot is bot
+
+
+@pytest.mark.parametrize(
+    "factory",
+    [
+        lambda: create_message(text="x"),
+        lambda: create_callback_query(data="x"),
+        lambda: create_inline_query(query="x"),
+        lambda: create_chat_member_updated(),
+        lambda: create_update(),
+    ],
+    ids=["message", "callback_query", "inline_query", "chat_member_updated", "update"],
+)
+def test_factories_are_unbound_without_bot(factory):
+    assert factory().bot is None
