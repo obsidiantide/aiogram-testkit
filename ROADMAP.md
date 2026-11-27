@@ -17,5 +17,5 @@
 - [x] Typed `py.typed` marker and mypy configuration
 
 ## D. Performance & Polish
-- [ ] Usage guide with FSM and middleware examples in README
+- [x] Usage guide with FSM and middleware examples in README
 - [x] pytest plugin exposing `mocked_bot` and `mocked_session` fixtures

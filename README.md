@@ -71,6 +71,42 @@ async def test_start():
 
 Extra keyword arguments are passed to `Dispatcher.feed_update` as workflow data.
 
+## FSM and middleware
+
+State lives in the dispatcher's storage (`MemoryStorage` by default), so a multi-step conversation is just several `feed_update` calls against the same `Dispatcher`:
+
+```python
+from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+
+class Form(StatesGroup):
+    name = State()
+
+dp = Dispatcher()
+
+@dp.message(Command("register"))
+async def register(message: Message, state: FSMContext) -> None:
+    await state.set_state(Form.name)
+    await message.answer("What is your name?")
+
+@dp.message(Form.name)
+async def got_name(message: Message, state: FSMContext) -> None:
+    await state.clear()
+    await message.answer(f"Nice to meet you, {message.text}!")
+
+async def test_registration(mocked_bot):
+    first = await feed_update(dp, mocked_bot, create_update(update_id=1, message=create_message(text="/register", bot=mocked_bot)))
+    second = await feed_update(dp, mocked_bot, create_update(update_id=2, message=create_message(text="Alice", bot=mocked_bot)))
+
+    assert first[0].text == "What is your name?"
+    assert second[0].text == "Nice to meet you, Alice!"
+```
+
+Middlewares registered on the dispatcher run as usual, and anything they put into `data` is available to handlers. Keyword arguments of `feed_update` become workflow data (`feed_update(dp, bot, update, role="admin")` injects `role`). Use a distinct `update_id` for every update of a conversation.
+
+See `tests/test_fsm_and_middleware.py` for runnable versions of these examples.
+
 ## pytest fixtures
 
 Installing the package registers a pytest plugin with two fixtures:
